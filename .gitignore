@@ -1,0 +1,8 @@
+build/
+*.log
+.vscode/
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
