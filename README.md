@@ -2,7 +2,7 @@
 
 [![windows](https://img.shields.io/badge/windows-10~11-orange)](https://www.microsoft.com/zh-cn/windows/)
 
-English | [中文](README_ZH.md)
+English | [中文](README_zh.md)
 
 **SpotlightWallpaper** is a lightweight Windows desktop wallpaper application that automatically sets high-quality cached images from Windows Spotlight as the desktop background. Written in pure C++ and Win32 API, it uses Direct2D for efficient rendering and leverages the standard WorkerW window hierarchy technique to seamlessly embed the wallpaper window behind desktop icons.
 
