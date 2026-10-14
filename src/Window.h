@@ -16,6 +16,9 @@ public:
     void SetTrayIcon(TrayIcon* tray);
     void SetCallback(std::function<void(UINT)> callback);
     void SetRenderCallback(std::function<void()> callback);
+    void SetTimerCallback(std::function<void()> callback);
+    void StartTimer(UINT intervalMs);
+    void StopTimer();
     void Invalidate();
 
 private:
@@ -27,4 +30,6 @@ private:
     TrayIcon* m_tray = nullptr;
     std::function<void(UINT)> m_callback;
     std::function<void()> m_renderCallback;
+    std::function<void()> m_timerCallback;
+    UINT_PTR m_timerId = 0;
 };

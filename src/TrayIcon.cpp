@@ -23,26 +23,26 @@ bool TrayIcon::Initialize(HWND hWnd, UINT message) {
     HINSTANCE hInstance = GetModuleHandle(nullptr);
     HICON hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APP_ICON));
     if (!hIcon) {
-        Logger::LogError(L"Failed to load icon, fallback to default");
+        LOG_ERROR("Failed to load icon, fallback to default");
         hIcon = LoadIcon(nullptr, IDI_APPLICATION);
     }
     m_nid.hIcon = hIcon;
 
-    wcscpy_s(m_nid.szTip, L"SpotlightWallpaper");
+    LoadString(hInstance, IDS_APP_NAME, m_nid.szTip, sizeof(m_nid.szTip) / sizeof(WCHAR));
 
     if (!Shell_NotifyIcon(NIM_ADD, &m_nid)) {
-        Logger::LogError(L"Failed to add tray icon");
+        LOG_ERROR("Failed to add tray icon");
         return false;
     }
 
     m_hMenu = CreatePopupMenu();
     if (!m_hMenu) {
-        Logger::LogError(L"Failed to create menu");
+        LOG_ERROR("Failed to create menu");
         return false;
     }
 
     m_initialized = true;
-    Logger::Log(L"Tray icon initialized");
+    LOG_INFO("Tray icon initialized");
     return true;
 }
 
@@ -63,14 +63,25 @@ void TrayIcon::UpdateMenu(bool autoRefreshEnabled, bool startupEnabled) {
 
     while (DeleteMenu(m_hMenu, 0, MF_BYPOSITION)) {}
 
-    std::wstring refreshText = autoRefreshEnabled ? L"Disable Auto Refresh" : L"Enable Auto Refresh";
-    std::wstring startupText = startupEnabled ? L"Disable Startup" : L"Enable Startup";
+    HINSTANCE hInst = GetModuleHandle(nullptr);
+    WCHAR buf[256];
 
-    AppendMenu(m_hMenu, MF_STRING, ID_TOGGLE_AUTO_REFRESH, refreshText.c_str());
-    AppendMenu(m_hMenu, MF_STRING, ID_SET_REFRESH_INTERVAL, L"Set Refresh Interval...");
-    AppendMenu(m_hMenu, MF_STRING, ID_NEXT, L"Next Wallpaper");
+    LoadString(hInst, autoRefreshEnabled ? IDS_MENU_AUTO_REFRESH_ON : IDS_MENU_AUTO_REFRESH_OFF, buf, 256);
+    AppendMenu(m_hMenu, MF_STRING, ID_TOGGLE_AUTO_REFRESH, buf);
+
+    LoadString(hInst, IDS_MENU_SET_INTERVAL, buf, 256);
+    AppendMenu(m_hMenu, MF_STRING, ID_SET_REFRESH_INTERVAL, buf);
+
+    LoadString(hInst, IDS_MENU_NEXT, buf, 256);
+    AppendMenu(m_hMenu, MF_STRING, ID_NEXT, buf);
+
     AppendMenu(m_hMenu, MF_SEPARATOR, 0, nullptr);
-    AppendMenu(m_hMenu, MF_STRING, ID_TOGGLE_STARTUP, startupText.c_str());
+
+    LoadString(hInst, startupEnabled ? IDS_MENU_STARTUP_ON : IDS_MENU_STARTUP_OFF, buf, 256);
+    AppendMenu(m_hMenu, MF_STRING, ID_TOGGLE_STARTUP, buf);
+
     AppendMenu(m_hMenu, MF_SEPARATOR, 0, nullptr);
-    AppendMenu(m_hMenu, MF_STRING, ID_EXIT, L"Exit");
+
+    LoadString(hInst, IDS_MENU_EXIT, buf, 256);
+    AppendMenu(m_hMenu, MF_STRING, ID_EXIT, buf);
 }

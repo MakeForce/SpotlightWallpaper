@@ -26,8 +26,7 @@ bool ConfigManager::Load() {
         m_refreshInterval = MIN_REFRESH_INTERVAL;
     }
     
-    Logger::Log(L"Loaded config: AutoRefresh=" + std::to_wstring(m_autoRefreshEnabled) + 
-        L", RefreshInterval=" + std::to_wstring(m_refreshInterval));
+    LOG_INFO("Loaded config: AutoRefresh={}, RefreshInterval={}", m_autoRefreshEnabled, m_refreshInterval);
     return true;
 }
 
@@ -42,8 +41,7 @@ bool ConfigManager::Save() {
     WritePrivateProfileString(L"Settings", L"RefreshInterval", 
         std::to_wstring(m_refreshInterval).c_str(), configPath.c_str());
     
-    Logger::Log(L"Saved config: AutoRefresh=" + std::to_wstring(m_autoRefreshEnabled) + 
-        L", RefreshInterval=" + std::to_wstring(m_refreshInterval));
+    LOG_INFO("Saved config: AutoRefresh={}, RefreshInterval={}", m_autoRefreshEnabled, m_refreshInterval);
     return true;
 }
 

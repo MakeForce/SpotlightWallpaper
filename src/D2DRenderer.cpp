@@ -12,11 +12,11 @@ D2DRenderer::~D2DRenderer() {
 }
 
 bool D2DRenderer::Initialize(HWND hwnd) {
-    Logger::Log(L"D2DRenderer::Initialize");
+    LOG_INFO("D2DRenderer::Initialize");
 
     HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, m_factory.GetAddressOf());
     if (FAILED(hr)) {
-        Logger::LogError(L"D2D1CreateFactory failed");
+        LOG_ERROR("D2D1CreateFactory failed");
         return false;
     }
 
@@ -27,66 +27,66 @@ bool D2DRenderer::Initialize(HWND hwnd) {
         D2D1_RENDER_TARGET_TYPE_DEFAULT,
         D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE)
     );
-    
+
     hr = m_factory->CreateHwndRenderTarget(
         props,
         D2D1::HwndRenderTargetProperties(hwnd, D2D1::SizeU(rect.right - rect.left, rect.bottom - rect.top)),
         m_renderTarget.GetAddressOf()
     );
     if (FAILED(hr)) {
-        Logger::LogError(L"CreateHwndRenderTarget failed");
+        LOG_ERROR("CreateHwndRenderTarget failed");
         return false;
     }
 
     hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, reinterpret_cast<void**>(m_wicFactory.GetAddressOf()));
     if (FAILED(hr)) {
-        Logger::LogError(L"WIC factory failed");
+        LOG_ERROR("WIC factory failed");
         return false;
     }
 
-    Logger::Log(L"D2DRenderer OK");
+    LOG_INFO("D2DRenderer OK");
     return true;
 }
 
 bool D2DRenderer::LoadImage(const std::wstring& filePath) {
-    Logger::Log(L"D2DRenderer::LoadImage: " + filePath);
+    LOG_INFO("D2DRenderer::LoadImage: {}", Logger::WstrToStr(filePath));
 
     m_bitmap.Reset();
 
     ComPtr<IWICBitmapDecoder> decoder;
     HRESULT hr = m_wicFactory->CreateDecoderFromFilename(filePath.c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnDemand, decoder.GetAddressOf());
     if (FAILED(hr)) {
-        Logger::LogError(L"CreateDecoderFromFilename failed");
+        LOG_ERROR("CreateDecoderFromFilename failed");
         return false;
     }
 
     ComPtr<IWICBitmapFrameDecode> frame;
     hr = decoder->GetFrame(0, frame.GetAddressOf());
     if (FAILED(hr)) {
-        Logger::LogError(L"GetFrame failed");
+        LOG_ERROR("GetFrame failed");
         return false;
     }
 
     ComPtr<IWICFormatConverter> converter;
     hr = m_wicFactory->CreateFormatConverter(converter.GetAddressOf());
     if (FAILED(hr)) {
-        Logger::LogError(L"CreateFormatConverter failed");
+        LOG_ERROR("CreateFormatConverter failed");
         return false;
     }
 
     hr = converter->Initialize(frame.Get(), GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
     if (FAILED(hr)) {
-        Logger::LogError(L"Converter init failed");
+        LOG_ERROR("Converter init failed");
         return false;
     }
 
     hr = m_renderTarget->CreateBitmapFromWicBitmap(converter.Get(), nullptr, m_bitmap.GetAddressOf());
     if (FAILED(hr)) {
-        Logger::LogError(L"CreateBitmapFromWicBitmap failed");
+        LOG_ERROR("CreateBitmapFromWicBitmap failed");
         return false;
     }
 
-    Logger::Log(L"Image loaded OK");
+    LOG_INFO("Image loaded OK");
     return true;
 }
 

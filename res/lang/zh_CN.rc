@@ -1,0 +1,31 @@
+#include "../resource.h"
+
+// ==========================================
+// 2. 跨编译器兼容的 Windows 资源头文件包含
+// ==========================================
+#ifdef __MINGW32__
+    // MinGW (windres) 环境：使用 winresrc.h，它包含了 winver.h (提供 VERSIONINFO 等宏)
+    #include <winresrc.h>
+#else
+    // MSVC (rc.exe) 环境：使用 Windows SDK 提供的 winres.h 
+    // (它比 windows.h 更轻量，专为资源编译设计，避免了宏冲突)
+    #include <winres.h>
+#endif
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+STRINGTABLE
+BEGIN
+    IDS_APP_NAME                "SpotlightWallpaper"
+    IDS_MENU_EXIT               "退出"
+    IDS_MENU_NEXT               "下一张壁纸"
+    IDS_MENU_AUTO_REFRESH_ON    "关闭自动刷新"
+    IDS_MENU_AUTO_REFRESH_OFF   "开启自动刷新"
+    IDS_MENU_SET_INTERVAL       "设置刷新间隔..."
+    IDS_MENU_STARTUP_ON         "关闭开机启动"
+    IDS_MENU_STARTUP_OFF        "开启开机启动"
+    IDS_DLG_TITLE               "设置"
+    IDS_DLG_INTERVAL_LABEL      "刷新间隔（分钟）："
+    IDS_DLG_MIN_HINT            "最小 5 分钟"
+    IDS_DLG_OK                  "确定"
+    IDS_DLG_CANCEL              "取消"
+END

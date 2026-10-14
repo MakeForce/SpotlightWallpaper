@@ -75,18 +75,18 @@ bool SpotlightManager::Scan() {
     m_wallpapers.clear();
 
     std::wstring assetsPath = GetAssetsPath();
-    Logger::Log(L"Scanning Spotlight assets: " + assetsPath);
+    LOG_INFO("Scanning Spotlight assets: {}", Logger::WstrToStr(assetsPath));
 
     if (assetsPath.empty()) {
-        Logger::LogError(L"Failed to get assets path");
+        LOG_ERROR("Failed to get assets path");
         return false;
     }
 
-    WIN32_FIND_DATA findData;
-    HANDLE hFind = FindFirstFile((assetsPath + L"\\*").c_str(), &findData);
-
+    // 使用宽字符 API 防止中文路径问题
+    WIN32_FIND_DATAW findData;
+    HANDLE hFind = FindFirstFileW((assetsPath + L"\\*").c_str(), &findData);
     if (hFind == INVALID_HANDLE_VALUE) {
-        Logger::LogError(L"FindFirstFile failed, path may not exist");
+        LOG_ERROR("FindFirstFile failed, path may not exist");
         return false;
     }
 
@@ -104,25 +104,22 @@ bool SpotlightManager::Scan() {
             m_wallpapers.push_back(fullPath);
             validFiles++;
         }
-    } while (FindNextFile(hFind, &findData));
-
+    } while (FindNextFileW(hFind, &findData));
+    
     FindClose(hFind);
 
+    // 按最后修改时间降序排序 (最新的在前面)
     std::sort(m_wallpapers.begin(), m_wallpapers.end(), [](const std::wstring& a, const std::wstring& b) {
         WIN32_FILE_ATTRIBUTE_DATA da, db;
-        GetFileAttributesEx(a.c_str(), GetFileExInfoStandard, &da);
-        GetFileAttributesEx(b.c_str(), GetFileExInfoStandard, &db);
+        GetFileAttributesExW(a.c_str(), GetFileExInfoStandard, &da);
+        GetFileAttributesExW(b.c_str(), GetFileExInfoStandard, &db);
         return CompareFileTime(&da.ftLastWriteTime, &db.ftLastWriteTime) > 0;
     });
 
-    Logger::Log(L"Found " + std::to_wstring(totalFiles) + L" files, " + std::to_wstring(validFiles) + L" valid wallpapers");
-
-    size_t count = m_wallpapers.size();
-    if (count > 3) count = 3;
-    for (size_t i = 0; i < count; i++) {
-        Logger::Log(L"Wallpaper " + std::to_wstring(i + 1) + L": " + m_wallpapers[i]);
-    }
-
+    LOG_INFO("Found {} files, {} valid wallpapers", totalFiles, validFiles);
+    
+    // 记录扫描成功的时间
+    m_lastScanTime = GetTickCount(); 
     return !m_wallpapers.empty();
 }
 
@@ -136,11 +133,56 @@ std::wstring SpotlightManager::GetLatestWallpaper() const {
 }
 
 std::wstring SpotlightManager::GetNextWallpaper() {
-    if (m_wallpapers.empty()) return L"";
-    std::wstring path = m_wallpapers[index];
-    index = index + 1;
-    if (index >= m_wallpapers.size()) {
-        index = 0;
+    // 1. 如果列表为空，或者距离上次扫描已经超过 1 小时 (3600000 ms)
+    // 自动触发扫描，以感知系统新增的壁纸
+    if (m_wallpapers.empty() || (GetTickCount() - m_lastScanTime > 3600000)) {
+        LOG_INFO("Auto-rescanning to detect new wallpapers...");
+        if (!Scan()) {
+            return L"";
+        }
     }
-    return path;
+
+    if (m_wallpapers.empty()) return L"";
+    const int maxAttempts = static_cast<int>(m_wallpapers.size());
+    
+    int current = index;
+    current = current + 1;
+    if (current >= maxAttempts) {
+        current = 0;
+    }
+
+    while (current < maxAttempts)
+    {
+        // 获取当前索引对应的路径
+        std::wstring path = m_wallpapers[index];
+        // 实时验证文件是否还存在（应对系统清理）
+        if (GetFileAttributesW(path.c_str()) != INVALID_FILE_ATTRIBUTES) {
+            // 文件存在，返回该路径
+            index = current;
+            return path;
+        }
+        current++;
+    }
+    current = 0;
+    while (current <= index)
+    {
+        // 获取当前索引对应的路径
+        std::wstring path = m_wallpapers[index];
+        // 实时验证文件是否还存在（应对系统清理）
+        if (GetFileAttributesW(path.c_str()) != INVALID_FILE_ATTRIBUTES) {
+            // 文件存在，返回该路径
+            index = current;
+            return path;
+        }
+        current++;
+    }
+    
+    // 3. 如果整个列表里的文件都被删光了，强制重新扫描一次
+    LOG_WARN("All wallpapers in list are missing. Forcing rescan...");
+    if (Scan()) {
+        // 重扫成功后，再次尝试获取（此时 index 已在 Scan 中被重置为 0）
+        return GetNextWallpaper(); 
+    }
+    
+    return L"";
 }
